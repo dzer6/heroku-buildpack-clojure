@@ -23,21 +23,20 @@ export_env_dir() {
   fi
 }
 
+. $BIN_DIR/../lib/utils
+
 export_env_dir $ENV_DIR
 
-# Load common JVM functionality from https://github.com/heroku/heroku-buildpack-jvm-common
-JVM_COMMON_BUILDPACK=${JVM_COMMON_BUILDPACK:-https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/jvm-common.tgz}
-mkdir -p /tmp/jvm-common
-curl --silent --location $JVM_COMMON_BUILDPACK | tar xzm -C /tmp/jvm-common --strip-components=1
-. /tmp/jvm-common/bin/util
-. /tmp/jvm-common/bin/java
+#create the cache dir if it doesn't exist
+mkdir -p $CACHE_DIR
 
-# Install JDK
-javaVersion=$(detect_java_version ${BUILD_DIR})
-echo -n "-----> Installing OpenJDK ${javaVersion}..."
-install_java ${BUILD_DIR} ${javaVersion}
-jdk_overlay ${BUILD_DIR}
-echo "done"
+statusn "Installing wget..."
+install_wget $CACHE_DIR
+echo " version $(wget_version) installed"
+
+statusn "Installing JDK..."
+install_java $CACHE_DIR $BUILD_DIR
+echo " version $(java_version) installed"
 
 # Determine Leiningen version
 if [ "$(grep ":min-lein-version[[:space:]]\+\"2" $BUILD_DIR/project.clj)" != "" ]; then
